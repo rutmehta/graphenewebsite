@@ -1,0 +1,16 @@
+WHAT IS GRAPHENE?
+Problem: 
+- This product has 2 key problems that it's solving: 
+- -     1. Information retrieval in an information overloaded environment
+- -     2. Inability for AI agents to interact with browser elements, preventing huge productivity gains
+
+Solution: 
+- We solve this by creating our own browser, with a redesigned UI for web navigation and in built AI information retrieval through your browser session, and building MCP server-like solutions for each website - this way, the website developers don't have to do any extra work, the browser does it for them. 
+- The redesigned UI will have a launchpad with a node-based graph of each website for tab navigation, and it won't have tabs. Underneath the graph, it'll have a search bar for getting information from your session/projects.
+
+
+Draw inspiration from cool websites like @web https://www.interviewcoder.co/ or @web https://arc.net/ or be creative like @web https://modal.com/
+
+PLEASE BE MODERN, SLEEK, AND VERY COOL
+
+Use React, NextJS, and Tailwind CSS
