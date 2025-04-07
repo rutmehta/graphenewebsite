@@ -1,7 +1,191 @@
+"use client";
+import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import * as d3 from 'd3';
 
 export default function Hero() {
+  const graphRef = useRef(null);
+
+  useEffect(() => {
+    if (!graphRef.current) return;
+
+    // Clear any existing SVG content
+    d3.select(graphRef.current).selectAll("*").remove();
+
+    // Define the graph data
+    const nodes = [
+      { id: "projects", label: "Projects", color: "#3b82f6", radius: 40, x: 250, y: 150 },
+      { id: "research", label: "Research", color: "#a855f7", radius: 32, x: 125, y: 75 },
+      { id: "resources", label: "Resources", color: "#22c55e", radius: 32, x: 375, y: 225 },
+      { id: "articles", label: "Articles", color: "#6366f1", radius: 24, x: 300, y: 45 },
+      { id: "notes", label: "Notes", color: "#06b6d4", radius: 20, x: 75, y: 240 },
+      { id: "tasks", label: "Tasks", color: "#f43f5e", radius: 20, x: 450, y: 180 }
+    ];
+
+    const links = [
+      { source: "research", target: "projects", color: "rgba(168, 85, 247, 0.6)" },
+      { source: "resources", target: "projects", color: "rgba(34, 197, 94, 0.6)" },
+      { source: "articles", target: "research", color: "rgba(99, 102, 241, 0.6)" },
+      { source: "notes", target: "research", color: "rgba(6, 182, 212, 0.6)" },
+      { source: "tasks", target: "resources", color: "rgba(244, 63, 94, 0.6)" }
+    ];
+
+    // Set up the SVG container and dimensions
+    const width = graphRef.current.clientWidth;
+    const height = graphRef.current.clientHeight;
+
+    const svg = d3.select(graphRef.current)
+      .append("svg")
+      .attr("width", "150%")
+      .attr("height", "150%")
+      .attr("viewBox", `0 0 ${width} ${height}`);
+
+    // Create a container for all graph elements
+    const g = svg.append("g");
+
+    // Add a boundary rectangle (invisible)
+    g.append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "none")
+      .attr("stroke", "rgba(255,255,255,0.1)")
+      .attr("rx", 8)
+      .attr("ry", 8);
+
+    // Define the simulation with boundary forces
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(130))
+      .force("charge", d3.forceManyBody().strength(-300))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(d => d.radius + 10))
+      // Add boundary forces
+      .force("x", d3.forceX(width / 2).strength(0.05))
+      .force("y", d3.forceY(height / 2).strength(0.05));
+
+    // Create links
+    const link = g.append("g")
+      .selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("stroke", d => d.color)
+      .attr("stroke-width", 2)
+      .attr("stroke-opacity", 0.8);
+
+    // Create node groups
+    const nodeGroup = g.append("g")
+      .selectAll("g")
+      .data(nodes)
+      .join("g")
+      .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+
+    // Add circles for each node
+    nodeGroup.append("circle")
+      .attr("r", d => d.radius)
+      .attr("fill", d => `${d.color}cc`) // cc for 80% opacity
+      .attr("stroke", d => d.color)
+      .attr("stroke-opacity", 0.3)
+      .attr("stroke-width", 2);
+
+    // Add shadow effects to nodes
+    nodeGroup.append("circle")
+      .attr("r", d => d.radius)
+      .attr("fill", "none")
+      .attr("filter", d => `drop-shadow(0 0 8px ${d.color}80)`)
+      .attr("stroke", d => `${d.color}40`) // 40 for 25% opacity
+      .attr("stroke-width", 1);
+
+    // Add labels for each node
+    nodeGroup.append("text")
+      .text(d => d.label)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", "white")
+      .attr("fill-opacity", 0.9)
+      .attr("font-size", d => d.radius > 30 ? "14px" : "11px")
+      .attr("font-weight", "medium");
+
+    // Add particle effects
+    const particles = g.append("g")
+      .selectAll("circle")
+      .data(links)
+      .join("circle")
+      .attr("r", 2)
+      .attr("fill", d => d.color)
+      .attr("opacity", 0.8);
+
+    // Update function for the simulation
+    simulation.on("tick", () => {
+      // Enforce boundary constraints
+      nodes.forEach(d => {
+        // Consider the radius when applying boundary constraints
+        d.x = Math.max(d.radius, Math.min(width - d.radius, d.x));
+        d.y = Math.max(d.radius, Math.min(height - d.radius, d.y));
+      });
+
+      // Update link positions
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      // Update node positions
+      nodeGroup.attr("transform", d => `translate(${d.x}, ${d.y})`);
+
+      // Animate particles along the links
+      particles.each(function (d) {
+        // Get current position along the link
+        const t = (Date.now() % 3000) / 3000;
+        const x = d.source.x * (1 - t) + d.target.x * t;
+        const y = d.source.y * (1 - t) + d.target.y * t;
+
+        d3.select(this)
+          .attr("cx", x)
+          .attr("cy", y);
+      });
+    });
+
+    // Drag functions
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      // Constrain the dragging to the boundaries
+      const x = Math.max(d.radius, Math.min(width - d.radius, event.x));
+      const y = Math.max(d.radius, Math.min(height - d.radius, event.y));
+
+      d.fx = x;
+      d.fy = y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    // Zoom and pan functionality with boundary constraints
+    const zoom = d3.zoom()
+      .scaleExtent([0.5, 2])  // Limit zoom scale
+      .translateExtent([[0, 0], [width, height]])  // Constrain panning to container size
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
+
+    return () => {
+      simulation.stop();
+    };
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-12">
       {/* Background effects */}
@@ -17,18 +201,12 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">
-                Reimagine
-              </span>{" "}
-              your web experience
+              the browser for real work
             </h1>
             <p className="text-lg md:text-xl text-white/80 mb-8 max-w-lg">
-              Graphene is a next-generation browser with AI-powered information retrieval and seamless browser automation.
+              supercharging productivity by redesigning how we interact with information on the web for professionals, researchers, and students
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/#waitlist" className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium px-6 py-3 rounded-full transition-all duration-300 transform hover:scale-105 text-center">
-                Join Waitlist
-              </Link>
               <Link href="/features" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-medium px-6 py-3 rounded-full transition-all duration-300 border border-white/20 text-center">
                 Explore Features
               </Link>
@@ -50,58 +228,15 @@ export default function Hero() {
                     graphene://launchpad
                   </div>
                 </div>
-                
-                {/* Enhanced Node graph visualization */}
-                <div className="h-1/2 w-full bg-black/40 rounded-lg mb-4 p-4 relative">
-                  {/* Connection lines SVG - lower z-index */}
-                  <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 10 }}>
-                    {/* Purple Research to Blue Projects */}
-                    <line x1="25%" y1="25%" x2="50%" y2="50%" stroke="rgba(168, 85, 247, 0.6)" strokeWidth="2" />
-                    {/* Green Resources to Blue Projects */}
-                    <line x1="75%" y1="75%" x2="50%" y2="50%" stroke="rgba(34, 197, 94, 0.6)" strokeWidth="2" />
-                    
-                    {/* Indigo Articles to Purple Research */}
-                    <line x1="60%" y1="15%" x2="25%" y2="25%" stroke="rgba(99, 102, 241, 0.6)" strokeWidth="1.5" />
-                    {/* Cyan Notes to Purple Research */}
-                    <line x1="15%" y1="80%" x2="25%" y2="25%" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.5" />
-                    {/* Rose Tasks to Green Resources */}
-                    <line x1="90%" y1="60%" x2="75%" y2="75%" stroke="rgba(244, 63, 94, 0.6)" strokeWidth="1.5" />
-                    
-                    {/* Curved connections */}
-                    <path d="M 25% 25% Q 40% 10% 60% 15%" stroke="rgba(139, 92, 246, 0.5)" strokeWidth="1.5" fill="none" />
-                    <path d="M 75% 75% Q 90% 80% 90% 60%" stroke="rgba(34, 197, 94, 0.5)" strokeWidth="1.5" fill="none" />
-                  </svg>
-                  
-                  {/* Central Project Node - higher z-index */}
-                  <div className="absolute w-20 h-20 bg-blue-600/80 rounded-lg top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-white text-opacity-90 shadow-lg shadow-blue-600/30 border border-blue-400/30 z-30">
-                    <div className="text-sm font-medium">Projects</div>
-                  </div>
-                  
-                  {/* Primary Nodes - higher z-index than lines */}
-                  <div className="absolute w-16 h-16 bg-purple-500/80 rounded-lg top-1/4 left-1/4 flex items-center justify-center text-white text-opacity-90 shadow-lg shadow-purple-500/20 border border-purple-400/30 z-20">
-                    <div className="text-xs font-medium">Research</div>
-                  </div>
-                  <div className="absolute w-16 h-16 bg-green-500/80 rounded-lg bottom-1/4 right-1/4 flex items-center justify-center text-white text-opacity-90 shadow-lg shadow-green-500/20 border border-green-400/30 z-20">
-                    <div className="text-xs font-medium">Resources</div>
-                  </div>
-                  
-                  {/* Secondary Nodes - higher z-index than lines */}
-                  <div className="absolute w-12 h-12 bg-indigo-500/80 rounded-lg top-[15%] left-[60%] flex items-center justify-center text-white text-opacity-90 shadow-lg shadow-indigo-500/20 border border-indigo-400/30 z-20">
-                    <div className="text-[10px] font-medium">Articles</div>
-                  </div>
-                  <div className="absolute w-10 h-10 bg-cyan-500/80 rounded-lg bottom-[20%] left-[15%] flex items-center justify-center text-white text-opacity-90 shadow-lg shadow-cyan-500/20 border border-cyan-400/30 z-20">
-                    <div className="text-[10px] font-medium">Notes</div>
-                  </div>
-                  <div className="absolute w-10 h-10 bg-rose-500/80 rounded-lg top-[60%] right-[10%] flex items-center justify-center text-white text-opacity-90 shadow-lg shadow-rose-500/20 border border-rose-400/30 z-20">
-                    <div className="text-[10px] font-medium">Tasks</div>
-                  </div>
-                  
-                  {/* Particle effects - highest z-index */}
-                  <div className="absolute w-2 h-2 bg-purple-500 rounded-full top-[35%] left-[37%] animate-pulse z-40"></div>
-                  <div className="absolute w-2 h-2 bg-blue-500 rounded-full top-[48%] left-[50%] animate-ping opacity-75 z-40"></div>
-                  <div className="absolute w-2 h-2 bg-green-500 rounded-full bottom-[40%] right-[37%] animate-pulse z-40"></div>
+
+                {/* Interactive D3 Node graph visualization with fixed boundary */}
+                <div
+                  ref={graphRef}
+                  className="h-1/2 w-full bg-black/40 rounded-lg mb-4 p-4 relative"
+                >
+                  {/* D3 will render the interactive graph here */}
                 </div>
-                
+
                 {/* AI search interface */}
                 <div className="relative">
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">

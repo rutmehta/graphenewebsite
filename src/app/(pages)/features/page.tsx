@@ -5,7 +5,7 @@ import Footer from "@/app/components/layout/Footer";
 const features = [
   {
     icon: <FaProjectDiagram className="h-12 w-12 text-purple-500" />,
-    title: "Node-Based Navigation",
+    title: "Graph-Based Navigation",
     description: "Navigate visually with an intuitive graph of connected sites, replacing the outdated tab system with a spatial model of your browsing session.",
     details: [
       "Visually group related content",
@@ -126,7 +126,7 @@ export default function Features() {
               </span>
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 mb-10 gap-8">
               {additionalFeatures.map((feature, index) => (
                 <div key={index} className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 transition-all duration-300 hover:bg-white/10 hover:shadow-xl hover:shadow-purple-500/5">
                   <div className="bg-black/30 rounded-lg w-16 h-16 flex items-center justify-center mb-6">

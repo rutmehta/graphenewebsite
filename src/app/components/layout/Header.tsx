@@ -27,9 +27,9 @@ export default function Header() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2">
-            <div className="relative h-8 w-8 md:h-10 md:w-10">
+            <div className="relative h-10 w-10 md:h-12 md:w-12">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full blur-sm opacity-80"></div>
-              <div className="absolute inset-0 flex items-center justify-center text-white font-bold">G</div>
+              <Image src="/logo.svg" alt="Graphene Logo" fill className="object-contain p-1" />
             </div>
             <span className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">Graphene</span>
           </Link>

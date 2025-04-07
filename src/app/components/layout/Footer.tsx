@@ -10,14 +10,15 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="relative h-8 w-8">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 rounded-full blur-sm opacity-80"></div>
-                <div className="absolute inset-0 flex items-center justify-center text-white font-bold">G</div>
+                
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500">Graphene</span>
             </Link>
             <p className="text-white/70 max-w-md">
-              Reimagining web navigation with AI-powered information retrieval and browser automation.
+             
             </p>
-            <div className="flex space-x-4 mt-6">
+            {/* TODO: GET SOCIALS */}
+            {/* <div className="flex space-x-4 mt-6">
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition">
                 <FaTwitter size={20} />
               </a>
@@ -27,7 +28,7 @@ export default function Footer() {
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white transition">
                 <FaLinkedin size={20} />
               </a>
-            </div>
+            </div> */}
           </div>
           <div>
             <h3 className="font-semibold text-white mb-4">Company</h3>
